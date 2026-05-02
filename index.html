@@ -34,9 +34,7 @@
 <body>
 <div class="card">
   <h2>🍔 アヤナイバーガー注文フォーム</h2>
-  <h3>焼津市役所職員限定</h3>
-  <p class="sub">新屋食堂アヤナイ｜054-629-7363</p>
-  <p class="sub">〒425-0022 静岡県焼津市本町１丁目４−１３</p>
+  <h3>焼津市役所限定</h3>
 
   <div id="form-area">
     <label>お名前（カタカナ）*</label>
@@ -58,13 +56,13 @@
     <div class="error-msg" id="floor-err">階を選択してください</div>
 
     <label>携帯電話番号*</label>
-    <span class="label-note">万が一返金が生じた場合のみ使用させていただきますので、正確にご記入をお願いいたします。</span>
     <input type="tel" id="tel" placeholder="090-XXXX-XXXX">
+    <span class="label-note">万が一返金が生じた場合のみ使用させていただきますので、正確にご記入をお願いいたします。</span>
     <div class="error-msg" id="tel-err">携帯電話番号を入力してください</div>
 
-    <label>注文日*（金曜日のみ）</label>
-    <input type="date" id="order-date">
-    <div class="error-msg" id="date-err">金曜日を選択してください</div>
+    <label>注文日*（金曜日のみ・祝日除く）</label>
+    <input type="date" id="order-date" onchange="validateDate()">
+    <div class="error-msg" id="date-err">金曜日（祝日除く）を選択してください</div>
 
     <label>個数*</label>
     <select id="qty" onchange="updatePrice()">
@@ -109,24 +107,57 @@
 var PRICE_PER_ITEM = 1000;
 // =============================================
 
+// ===== 祝日リスト（毎年1月に追加してください）=====
+var HOLIDAYS = [
+  // 2026年
+  '2026-01-01','2026-01-12','2026-02-11','2026-02-23',
+  '2026-03-20','2026-04-29','2026-05-03','2026-05-04',
+  '2026-05-05','2026-05-06','2026-07-20','2026-08-11',
+  '2026-09-21','2026-09-22','2026-09-23','2026-10-12',
+  '2026-11-03','2026-11-23','2026-12-23',
+  // 2027年
+  '2027-01-01','2027-01-11','2027-02-11','2027-02-23',
+  '2027-03-22','2027-04-29','2027-05-03','2027-05-04',
+  '2027-05-05','2027-07-19','2027-08-11','2027-08-12',
+  '2027-09-20','2027-09-23','2027-10-11','2027-11-03',
+  '2027-11-23'
+];
+// ===================================================
+
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-1GgOg-p9en88V9fdU09m4UeNKiJtoUKgZo-IsOwbXY7nkt5c380QSnM6pFJm8HgK/exec';
 
 function setCookie(n,v){var d=new Date();d.setTime(d.getTime()+365*24*60*60*1000);document.cookie=n+'='+encodeURIComponent(v)+';expires='+d.toUTCString()+';path=/';}
 function getCookie(n){var ca=document.cookie.split(';');for(var i=0;i<ca.length;i++){var c=ca[i].trim();if(c.indexOf(n+'=')===0)return decodeURIComponent(c.substring(n.length+1));}return '';}
 
-// 金曜日のみ選択可能にする
-function isFriday(dateStr) {
-  var d = new Date(dateStr);
-  return d.getDay() === 5;
+function isHoliday(dateStr) {
+  return HOLIDAYS.indexOf(dateStr) !== -1;
 }
 
-// 次の金曜日を取得
-function getNextFriday() {
+function isValidDay(dateStr) {
+  var d = new Date(dateStr);
+  return d.getDay() === 5 && !isHoliday(dateStr);
+}
+
+function getNextValidFriday() {
   var d = new Date();
-  var day = d.getDay();
-  var diff = (5 - day + 7) % 7 || 7;
-  d.setDate(d.getDate() + diff);
-  return d.toISOString().split('T')[0];
+  d.setDate(d.getDate() + 1);
+  for (var i = 0; i < 60; i++) {
+    var str = d.toISOString().split('T')[0];
+    if (isValidDay(str)) return str;
+    d.setDate(d.getDate() + 1);
+  }
+  return '';
+}
+
+function validateDate() {
+  var date = document.getElementById('order-date').value;
+  var err = document.getElementById('date-err');
+  if (!date || !isValidDay(date)) {
+    err.style.display = 'block';
+    document.getElementById('order-date').value = getNextValidFriday();
+  } else {
+    err.style.display = 'none';
+  }
 }
 
 window.onload = function() {
@@ -134,7 +165,7 @@ window.onload = function() {
   document.getElementById('dept').value = getCookie('ayanai_dept');
   document.getElementById('floor').value = getCookie('ayanai_floor');
   document.getElementById('tel').value = getCookie('ayanai_tel');
-  document.getElementById('order-date').value = getNextFriday();
+  document.getElementById('order-date').value = getNextValidFriday();
 };
 
 function updatePrice() {
@@ -160,7 +191,7 @@ function submitOrder() {
   var tel = document.getElementById('tel').value.trim();
   if (!tel) { document.getElementById('tel-err').style.display='block'; valid=false; } else { document.getElementById('tel-err').style.display='none'; }
   var date = document.getElementById('order-date').value;
-  if (!date || !isFriday(date)) {
+  if (!date || !isValidDay(date)) {
     document.getElementById('date-err').style.display='block'; valid=false;
   } else { document.getElementById('date-err').style.display='none'; }
   var qty = document.getElementById('qty').value;
