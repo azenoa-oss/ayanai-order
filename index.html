@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アヤナイバーガー注文フォーム</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: sans-serif; margin: 0; padding: 20px; background: #ffffff; }
+  .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }
+  h2 { font-size: 18px; margin: 0 0 4px; }
+  .sub { font-size: 12px; color: #888; margin: 0 0 4px; }
+  .sub:last-of-type { margin-bottom: 20px; }
+  label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; }
+  input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-bottom: 16px; }
+  .price-box { display: none; background: #fff8f0; border: 1.5px solid #D85A30; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; text-align: center; }
+  .price-label { font-size: 13px; color: #888; margin-bottom: 4px; }
+  .price-amount { font-size: 24px; font-weight: bold; color: #D85A30; }
+  .btn { width: 100%; padding: 14px; background: #D85A30; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+  .btn:hover { background: #993C1D; }
+  .btn:disabled { background: #ccc; cursor: not-allowed; }
+  .error-msg { font-size: 12px; color: #D85A30; margin-top: -12px; margin-bottom: 12px; display: none; }
+  .success { display: none; text-align: center; padding: 20px; }
+  .success-title { font-size: 18px; color: #2e7d32; margin-bottom: 8px; }
+  .success-price { font-size: 28px; font-weight: bold; color: #D85A30; margin: 12px 0; }
+  .success-note { font-size: 13px; color: #888; margin-bottom: 20px; }
+  .paypay-btn { display: inline-block; background: #e00; color: white; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: bold; text-decoration: none; }
+  .paypay-btn:hover { background: #c00; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>🍔 アヤナイバーガー注文フォーム</h2>
+  <p class="sub">新屋食堂アヤナイ｜焼津市役所職員限定｜054-629-7363</p>
+  <p class="sub">〒425-0022 静岡県焼津市本町１丁目４−１３</p>
+
+  <div id="form-area">
+    <label>お名前（カタカナ）*</label>
+    <input type="text" id="name" placeholder="ヤキズ タロウ">
+    <div class="error-msg" id="name-err">カタカナで入力してください</div>
+
+    <label>部署*</label>
+    <input type="text" id="dept" placeholder="例：市民課">
+    <div class="error-msg" id="dept-err">部署を入力してください</div>
+
+    <label>お届け場所*</label>
+    <select id="floor">
+      <option value="">階を選択してください</option>
+      <option value="1階">1階</option><option value="2階">2階</option>
+      <option value="3階">3階</option><option value="4階">4階</option>
+      <option value="5階">5階</option><option value="6階">6階</option>
+      <option value="7階">7階</option>
+    </select>
+    <div class="error-msg" id="floor-err">階を選択してください</div>
+
+    <label>携帯番号*</label>
+    <input type="tel" id="tel" placeholder="090-XXXX-XXXX">
+    <div class="error-msg" id="tel-err">携帯番号を入力してください</div>
+
+    <label>注文日*</label>
+    <input type="date" id="order-date">
+    <div class="error-msg" id="date-err">注文日を選択してください</div>
+
+    <label>個数*</label>
+    <select id="qty" onchange="updatePrice()">
+      <option value="">個数を選択</option>
+      <option value="1個">1個</option>
+      <option value="2個">2個</option>
+      <option value="3個">3個</option>
+      <option value="4個">4個</option>
+      <option value="5個">5個</option>
+    </select>
+    <div class="error-msg" id="qty-err">個数を選択してください</div>
+
+    <div class="price-box" id="price-box">
+      <div class="price-label">合計金額</div>
+      <div class="price-amount" id="price-amount">¥1,000</div>
+    </div>
+
+    <button class="btn" id="submit-btn" onclick="submitOrder()">注文する</button>
+    <p style="font-size:12px;color:#888;text-align:center;margin-top:12px;">土日のご予約も承っております</p>
+  </div>
+
+  <div class="success" id="success-area">
+    <p style="font-size:40px;">✅</p>
+    <p class="success-title">ご注文ありがとうございます！</p>
+    <p class="success-note">新屋食堂アヤナイよりご連絡いたします。</p>
+    <p style="font-size:13px;color:#555;margin-bottom:4px;">合計金額</p>
+    <div class="success-price" id="success-price">¥1,000</div>
+    <p style="font-size:13px;color:#555;margin-bottom:16px;">PayPayで送金してください👇</p>
+    <a class="paypay-btn" href="https://qr.paypay.ne.jp/p2p01_mQQ0mFGnjCOlN0Fc" target="_blank">💳 PayPayで支払う</a>
+    <p style="font-size:11px;color:#aaa;margin-top:12px;">上の金額を確認して送金してください</p>
+  </div>
+</div>
+
+<script>
+// ===== 金額設定（変更するときはここだけ！）=====
+var PRICE_PER_ITEM = 1000;
+// =============================================
+
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-1GgOg-p9en88V9fdU09m4UeNKiJtoUKgZo-IsOwbXY7nkt5c380QSnM6pFJm8HgK/exec';
+
+function setCookie(n,v){var d=new Date();d.setTime(d.getTime()+365*24*60*60*1000);document.cookie=n+'='+encodeURIComponent(v)+';expires='+d.toUTCString()+';path=/';}
+function getCookie(n){var ca=document.cookie.split(';');for(var i=0;i<ca.length;i++){var c=ca[i].trim();if(c.indexOf(n+'=')===0)return decodeURIComponent(c.substring(n.length+1));}return '';}
+
+window.onload = function() {
+  document.getElementById('name').value = getCookie('ayanai_name');
+  document.getElementById('dept').value = getCookie('ayanai_dept');
+  document.getElementById('floor').value = getCookie('ayanai_floor');
+  document.getElementById('tel').value = getCookie('ayanai_tel');
+  document.getElementById('order-date').value = new Date().toISOString().split('T')[0];
+};
+
+function updatePrice() {
+  var qty = document.getElementById('qty').value;
+  var num = parseInt(qty);
+  if (qty && !isNaN(num)) {
+    var total = num * PRICE_PER_ITEM;
+    document.getElementById('price-amount').textContent = '¥' + total.toLocaleString();
+    document.getElementById('price-box').style.display = 'block';
+  } else {
+    document.getElementById('price-box').style.display = 'none';
+  }
+}
+
+function submitOrder() {
+  var valid = true;
+  var name = document.getElementById('name').value.trim();
+  if (!name || !/^[ァ-ヶー\s]+$/.test(name)) { document.getElementById('name-err').style.display='block'; valid=false; } else { document.getElementById('name-err').style.display='none'; }
+  var dept = document.getElementById('dept').value.trim();
+  if (!dept) { document.getElementById('dept-err').style.display='block'; valid=false; } else { document.getElementById('dept-err').style.display='none'; }
+  var floor = document.getElementById('floor').value;
+  if (!floor) { document.getElementById('floor-err').style.display='block'; valid=false; } else { document.getElementById('floor-err').style.display='none'; }
+  var tel = document.getElementById('tel').value.trim();
+  if (!tel) { document.getElementById('tel-err').style.display='block'; valid=false; } else { document.getElementById('tel-err').style.display='none'; }
+  var date = document.getElementById('order-date').value;
+  if (!date) { document.getElementById('date-err').style.display='block'; valid=false; } else { document.getElementById('date-err').style.display='none'; }
+  var qty = document.getElementById('qty').value;
+  if (!qty) { document.getElementById('qty-err').style.display='block'; valid=false; } else { document.getElementById('qty-err').style.display='none'; }
+  if (!valid) return;
+
+  var btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = '送信中...';
+
+  var num = parseInt(qty);
+  var total = num * PRICE_PER_ITEM;
+
+  setCookie('ayanai_name', name);
+  setCookie('ayanai_dept', dept);
+  setCookie('ayanai_floor', floor);
+  setCookie('ayanai_tel', tel);
+
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, dept, floor, tel, date, qty, total })
+  }).then(function() {
+    document.getElementById('success-price').textContent = '¥' + total.toLocaleString();
+    document.getElementById('form-area').style.display='none';
+    document.getElementById('success-area').style.display='block';
+  }).catch(function(err) {
+    btn.disabled = false;
+    btn.textContent = '注文する';
+    alert('送信に失敗しました。もう一度お試しください。');
+  });
+}
+</script>
+</body>
+</html>
