@@ -8,10 +8,12 @@
   * { box-sizing: border-box; }
   body { font-family: sans-serif; margin: 0; padding: 20px; background: #ffffff; }
   .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }
-  h2 { font-size: 18px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 0 0 2px; }
+  h3 { font-size: 14px; color: #D85A30; margin: 0 0 4px; font-weight: normal; }
   .sub { font-size: 12px; color: #888; margin: 0 0 4px; }
   .sub:last-of-type { margin-bottom: 20px; }
-  label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; }
+  label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; }
+  .label-note { font-size: 11px; color: #888; margin-bottom: 6px; display: block; line-height: 1.5; }
   input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-bottom: 16px; }
   .price-box { display: none; background: #fff8f0; border: 1.5px solid #D85A30; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; text-align: center; }
   .price-label { font-size: 13px; color: #888; margin-bottom: 4px; }
@@ -20,6 +22,7 @@
   .btn:hover { background: #993C1D; }
   .btn:disabled { background: #ccc; cursor: not-allowed; }
   .error-msg { font-size: 12px; color: #D85A30; margin-top: -12px; margin-bottom: 12px; display: none; }
+  .footer-msg { font-size: 12px; color: #888; text-align: center; margin-top: 16px; line-height: 1.8; }
   .success { display: none; text-align: center; padding: 20px; }
   .success-title { font-size: 18px; color: #2e7d32; margin-bottom: 8px; }
   .success-price { font-size: 28px; font-weight: bold; color: #D85A30; margin: 12px 0; }
@@ -31,12 +34,13 @@
 <body>
 <div class="card">
   <h2>🍔 アヤナイバーガー注文フォーム</h2>
-  <p class="sub">新屋食堂アヤナイ｜焼津市役所職員限定｜054-629-7363</p>
+  <h3>焼津市役所職員限定</h3>
+  <p class="sub">新屋食堂アヤナイ｜054-629-7363</p>
   <p class="sub">〒425-0022 静岡県焼津市本町１丁目４−１３</p>
 
   <div id="form-area">
     <label>お名前（カタカナ）*</label>
-    <input type="text" id="name" placeholder="ヤキズ タロウ">
+    <input type="text" id="name" placeholder="アヤナイ タロウ">
     <div class="error-msg" id="name-err">カタカナで入力してください</div>
 
     <label>部署*</label>
@@ -53,13 +57,14 @@
     </select>
     <div class="error-msg" id="floor-err">階を選択してください</div>
 
-    <label>携帯番号*</label>
+    <label>携帯電話番号*</label>
+    <span class="label-note">万が一返金が生じた場合のみ使用させていただきますので、正確にご記入をお願いいたします。</span>
     <input type="tel" id="tel" placeholder="090-XXXX-XXXX">
-    <div class="error-msg" id="tel-err">携帯番号を入力してください</div>
+    <div class="error-msg" id="tel-err">携帯電話番号を入力してください</div>
 
-    <label>注文日*</label>
+    <label>注文日*（金曜日のみ）</label>
     <input type="date" id="order-date">
-    <div class="error-msg" id="date-err">注文日を選択してください</div>
+    <div class="error-msg" id="date-err">金曜日を選択してください</div>
 
     <label>個数*</label>
     <select id="qty" onchange="updatePrice()">
@@ -78,7 +83,13 @@
     </div>
 
     <button class="btn" id="submit-btn" onclick="submitOrder()">注文する</button>
-    <p style="font-size:12px;color:#888;text-align:center;margin-top:12px;">土日のご予約も承っております</p>
+
+    <p class="footer-msg">
+      実店舗ではアツアツの出来立てを最高の状態でご提供しています。<br>
+      お時間がございましたら、ぜひお店の雰囲気も味わいにいらしてください！<br>
+      新屋食堂アヤナイ｜054-629-7363<br>
+      〒425-0022 静岡県焼津市本町１丁目４−１３
+    </p>
   </div>
 
   <div class="success" id="success-area">
@@ -103,12 +114,27 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-1GgOg-p9en88V9fdU
 function setCookie(n,v){var d=new Date();d.setTime(d.getTime()+365*24*60*60*1000);document.cookie=n+'='+encodeURIComponent(v)+';expires='+d.toUTCString()+';path=/';}
 function getCookie(n){var ca=document.cookie.split(';');for(var i=0;i<ca.length;i++){var c=ca[i].trim();if(c.indexOf(n+'=')===0)return decodeURIComponent(c.substring(n.length+1));}return '';}
 
+// 金曜日のみ選択可能にする
+function isFriday(dateStr) {
+  var d = new Date(dateStr);
+  return d.getDay() === 5;
+}
+
+// 次の金曜日を取得
+function getNextFriday() {
+  var d = new Date();
+  var day = d.getDay();
+  var diff = (5 - day + 7) % 7 || 7;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().split('T')[0];
+}
+
 window.onload = function() {
   document.getElementById('name').value = getCookie('ayanai_name');
   document.getElementById('dept').value = getCookie('ayanai_dept');
   document.getElementById('floor').value = getCookie('ayanai_floor');
   document.getElementById('tel').value = getCookie('ayanai_tel');
-  document.getElementById('order-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('order-date').value = getNextFriday();
 };
 
 function updatePrice() {
@@ -134,7 +160,9 @@ function submitOrder() {
   var tel = document.getElementById('tel').value.trim();
   if (!tel) { document.getElementById('tel-err').style.display='block'; valid=false; } else { document.getElementById('tel-err').style.display='none'; }
   var date = document.getElementById('order-date').value;
-  if (!date) { document.getElementById('date-err').style.display='block'; valid=false; } else { document.getElementById('date-err').style.display='none'; }
+  if (!date || !isFriday(date)) {
+    document.getElementById('date-err').style.display='block'; valid=false;
+  } else { document.getElementById('date-err').style.display='none'; }
   var qty = document.getElementById('qty').value;
   if (!qty) { document.getElementById('qty-err').style.display='block'; valid=false; } else { document.getElementById('qty-err').style.display='none'; }
   if (!valid) return;
